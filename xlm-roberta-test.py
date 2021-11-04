@@ -23,6 +23,8 @@ tokenizer = AutoTokenizer.from_pretrained(checkpoint)
 tokenized_datasets = raw_datasets.map(tokenize_function, batched=True)
 small_train_dataset = tokenized_datasets["train"].shuffle(seed=42).select(range(1000))
 small_eval_dataset = tokenized_datasets["test"].shuffle(seed=42).select(range(1000))
+full_train_dataset = tokenized_datasets["train"]
+full_eval_dataset = tokenized_datasets["test"]
 
 data_collator = DataCollatorWithPadding(tokenizer)
 
