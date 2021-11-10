@@ -3,6 +3,7 @@ from transformers import AutoModelForSequenceClassification, Trainer, TrainingAr
 import torch
 import numpy as np
 from sklearn.metrics import classification_report
+from datasets import load_metric
 
 from torch import cuda
 from os.path import join
