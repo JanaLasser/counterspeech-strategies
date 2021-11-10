@@ -9,7 +9,10 @@ from os.path import join
 import sys
 
 TEST = sys.argv[1]
-EPOCHS = sys.argv[2]
+if TEST == 'test':
+    TEST = True
+EPOCHS = int(sys.argv[2])
+
 LR = 2e-5
 BATCH_SIZE = 32
 MODEL = "models/twitter-xlm-roberta-base"the language model
