@@ -10,9 +10,10 @@ from os.path import join
 import sys
 
 EPOCHS = int(sys.argv[1])
+BATCH_SIZE = int(sys.argv[2])
 
 try:
-    TEST = sys.argv[2]
+    TEST = sys.argv[3]
     if TEST == 'test':
         TEST = True
     else:
@@ -21,7 +22,7 @@ except IndexError:
     TEST = False
 
 LR = 2e-5
-BATCH_SIZE = 32
+
 MODEL = "models/twitter-xlm-roberta-base" 
 
 if TEST:  
