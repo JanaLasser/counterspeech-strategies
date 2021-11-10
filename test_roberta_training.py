@@ -12,7 +12,7 @@ import sys
 EPOCHS = int(sys.argv[1])
 
 try:
-    TEST = sys.argv[1]
+    TEST = sys.argv[2]
     if TEST == 'test':
         TEST = True
     else:
