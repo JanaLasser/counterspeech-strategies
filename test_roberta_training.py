@@ -30,7 +30,7 @@ dataset_dict = {}
 for i in ['train','val','test']:
     dataset_dict[i] = {}
     for j in ['text','labels']:
-        dataset_dict[i][j] = open(f"../../data/traindata/{i}_{j}.txt")\
+        dataset_dict[i][j] = open(f"data/traindata/{i}_{j}.txt")\
             .read().strip('\n').split('\n')
         if j == 'labels':
             dataset_dict[i][j] = [int(x) for x in dataset_dict[i][j]]
