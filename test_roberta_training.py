@@ -9,10 +9,16 @@ from torch import cuda
 from os.path import join
 import sys
 
-TEST = sys.argv[1]
-if TEST == 'test':
-    TEST = True
-EPOCHS = int(sys.argv[2])
+EPOCHS = int(sys.argv[1])
+
+try:
+    TEST = sys.argv[1]
+    if TEST == 'test':
+        TEST = True
+    else:
+        print('argument {} not recognized!'.format(TEST))
+except IndexError:
+    TEST = False
 
 LR = 2e-5
 BATCH_SIZE = 32
