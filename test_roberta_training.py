@@ -15,7 +15,7 @@ EPOCHS = int(sys.argv[2])
 
 LR = 2e-5
 BATCH_SIZE = 32
-MODEL = "models/twitter-xlm-roberta-base"the language model
+MODEL = "models/twitter-xlm-roberta-base" 
 
 if TEST:  
     MAX_TRAINING_EXAMPLES = 100 
