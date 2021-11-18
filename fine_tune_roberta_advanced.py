@@ -26,7 +26,7 @@ os.environ["TOKENIZERS_PARALLELISM"] = "true"
 testing = False
 try:
     arg = sys.argv[1]
-    if arg == "testing":
+    if arg == "test":
         arg = True
     else:
         print("couldn't recognize argument {}".format(arg))
@@ -69,8 +69,8 @@ class RIDataset(torch.utils.data.Dataset):
 # In[6]:
 
 
-def loss_fn(predictions, targets):       
-    return torch.nn.CrossEntropyLoss()(predictions, targets)
+def loss_fn(predictions, labels):       
+    return torch.nn.CrossEntropyLoss()(predictions, labels)
 
 
 def train_fn(data_loader, model, optimizer, device, scheduler):    
@@ -90,7 +90,7 @@ def train_fn(data_loader, model, optimizer, device, scheduler):
 
         outputs = model(ids, masks).logits       # Predictions from 1 batch of data.
         
-        loss = loss_fn(outputs, targets)         # Get the training loss.
+        loss = loss_fn(outputs, labels)         # Get the training loss.
         train_losses.append(loss.item())
 
         loss.backward()                          # To backpropagate the error (gradients are computed).
@@ -117,7 +117,7 @@ def validate_fn(data_loader, model, device):
 
             outputs = model(ids, masks).logits      # Predictions from 1 batch of data.
             
-            loss = loss_fn(outputs, targets)        # Get the validation loss.
+            loss = loss_fn(outputs, labels)        # Get the validation loss.
             val_losses.append(loss.item())
             
     return val_losses 
