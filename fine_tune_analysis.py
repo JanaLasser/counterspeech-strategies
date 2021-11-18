@@ -90,9 +90,11 @@ def main():
     for i in tqdm(range(1)):
 
         if i == 0:
+            print('loading model: before')
             model.load_state_dict(torch.load('./model_before.pth'))
         else:
             model.load_state_dict(torch.load('./model_after.pth'))
+            print('loading model: after')
 
         model = model_class.from_pretrained(model_name,num_labels=2)
 
