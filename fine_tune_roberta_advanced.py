@@ -62,7 +62,7 @@ class RIDataset(torch.utils.data.Dataset):
         )         
         return {"ids": torch.tensor(tokenized["input_ids"], dtype=torch.long),
                 "masks": torch.tensor(tokenized["attention_mask"], dtype=torch.long),
-                "label": torch.tensor(self.labels[idx], dtype=torch.int)
+                "label": torch.tensor(self.labels[idx], dtype=torch.long)
                }
 
 
@@ -84,7 +84,7 @@ def train_fn(data_loader, model, optimizer, device, scheduler):
         
         ids = batch["ids"].to(device, dtype=torch.long)
         masks = batch["masks"].to(device, dtype=torch.long)
-        labels = batch["label"].to(device, dtype=torch.int) 
+        labels = batch["label"].to(device, dtype=torch.long) 
         
         optimizer.zero_grad()                    # To zero out the gradients.
 
