@@ -30,10 +30,6 @@ def compute_metrics(eval_pred):
     predictions = np.argmax(logits, axis=-1)
     return metric.compute(predictions=predictions, references=labels)
 
-def tokenize_function(tweets_to_convert):
-    return tokenizer(tweets_to_convert["text"], padding="max_length", 
-                     truncation=True, max_length=max_length)
-
 #Processing function 
 
 def main():
@@ -59,6 +55,10 @@ def main():
     model = model_class.from_pretrained(model_name,num_labels=2, 
                                         output_hidden_states=True)
     tokenizer = tokenizer_class.from_pretrained(model_name)
+    
+    def tokenize_function(tweets_to_convert):
+        return tokenizer(tweets_to_convert["text"], padding="max_length", 
+                         truncation=True, max_length=max_length)
 
     torch.save(model.state_dict(), './model_before.pth')
 
