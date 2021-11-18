@@ -79,8 +79,8 @@ def main():
     """
     training_args = TrainingArguments("test_trainer",
     eval_accumulation_steps=1,
-    per_device_train_batch_size=128,
-    per_device_eval_batch_size=128,
+    per_device_train_batch_size=64,
+    per_device_eval_batch_size=64,
     num_train_epochs=5,
     )# %%
     

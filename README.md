@@ -1,10 +1,22 @@
 # counterspeech-strategies
 
 ## ToDos
-- [ ] 
+- [ ] implement training workflow following [this](https://towardsdatascience.com/transformers-can-you-rate-the-complexity-of-reading-passages-17c76da3403) example
+- [ ] test new training workflow implementation
+- [ ] implement layer-wise learning rate decay
+- [ ] implement warm-up steps
+- [ ] implement layer re-initialization
+- [ ] implement stochastic weight averaging
+- [ ] implement frequent evaluation
 
 ## Fine tuning parameters
-* `train_batch_size`
+### Model
+* Learnings:
+    * gbert-base and twitter-xlm-roberta-base perform similarly well in terms of accuracy
+### `train_batch_size`
+* Learnings:
+    * 10k rows: smaller batch sizes (128 vs 512) improve accuracy
+
 * layer-wise learning rate decay
 * warm-up steps
 * re-initialization of the top n layers
@@ -19,4 +31,4 @@
 | 2021-11-18 | twitter-xlm-roberta-base | 10k, DE | not set | 256 | accuracy | 0.669 | 4.5 min |
 | 2021-11-18 | twitter-xlm-roberta-base | 10k, DE | not set | 512 | accuracy | 0.651 | 4.5 min |
 | 2021-11-18 | twitter-xlm-roberta-base | 10k, DE | not set | 128 | accuracy | 0.673 | 4.5 min |
-| 2021-11-18 | twitter-xlm-roberta-base | 10k, DE | not set | 128 | f1 | 0.673 | 4.5 min |
+| 2021-11-18 | twitter-xlm-roberta-base | 10k, DE | not set | 128 | f1 | 0.6835 | 4.5 min |
