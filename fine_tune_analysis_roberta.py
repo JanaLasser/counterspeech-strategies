@@ -61,7 +61,7 @@ def main():
         return tokenizer(tweets_to_convert["text"], padding="max_length", 
                          truncation=True, max_length=max_length)
 
-    torch.save(model.state_dict(), './model_before_roberta.pth')
+    torch.save(model.state_dict(), 'trained_models/model_before_roberta.pth')
 
     #%%
     #Tokenize the dataset. Also adds attention masks, padding and other things
