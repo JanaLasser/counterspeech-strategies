@@ -27,11 +27,11 @@ testing = False
 try:
     arg = sys.argv[1]
     if arg == "test":
-        arg = True
+        testing = True
     else:
         print("couldn't recognize argument {}".format(arg))
 except IndexError:
-    pass
+    print('running in normal mode')
 
 
 # In[5]:
@@ -214,7 +214,7 @@ def run_training(df, model_name):
     print(f"Average CV: {round(np.mean(cv), 4)}\n") 
 
 
-# In[95]:
+# In[10]:
 
 
 FOLDS = [0, 1, 2, 3, 4]
@@ -224,9 +224,10 @@ EPOCHS = 5
 data_frac = 1
 model_name = "models/twitter-xlm-roberta-base"
 
+#testing=True
 if testing:
     FOLDS = FOLDS[0:1]
-    EPOCHS = EPOCHS[0:1]
+    EPOCHS = 1
     data_frac = 0.01
     
 src = '../../data/traindata'
@@ -243,4 +244,10 @@ df["fold"] = df["fold"].astype(int)
 print('N rows: {}'.format(len(df)))
 
 run_training(df, model_name)
+
+
+# In[ ]:
+
+
+
 
