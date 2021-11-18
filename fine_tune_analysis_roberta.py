@@ -1,6 +1,6 @@
 #%%
 import torch
-from transformers import RobertaForSequenceClassification, 
+from transformers import RobertaForSequenceClassification
 from transformers import RobertaTokenizerFast
 from transformers import Trainer, TrainingArguments
 from tqdm import tqdm
