@@ -93,8 +93,8 @@ def main():
 
         model = model_class.from_pretrained(model_name,num_labels=2)
 
-        rand_train_dataset = tokenized_datasets["train"]#.shuffle(seed=i).select(range(10000))
-        rand_eval_dataset = tokenized_datasets["test"]#.shuffle(seed=i).select(range(1000))
+        rand_train_dataset = tokenized_datasets["train"].shuffle(seed=i).select(range(10000))
+        rand_eval_dataset = tokenized_datasets["test"].shuffle(seed=i).select(range(1000))
         
         print("\n Random Training split",Counter(rand_train_dataset["label"]))
         print("\n Random Eval split",Counter(rand_eval_dataset["label"]))
