@@ -37,7 +37,7 @@ def main():
     #model_name = 'deepset/gbert-large'
     #model_name = "bert-base-uncased"
     #model_name = 'deepset/gbert-base'
-    model_name == 'models/twitter-xlm-roberta-base'
+    model_name = 'models/twitter-xlm-roberta-base'
 
     """This tells Transformers which classes we will use"""
     tokenizer_class = RobertaTokenizerFast
