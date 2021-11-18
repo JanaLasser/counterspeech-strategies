@@ -23,7 +23,7 @@ raw_datasets = load_dataset('json',
 print("\n\nLoaded ", data_label,"!!\n\n\n")
 
 #Function needed for assesing prediction
-metric = load_metric("accuracy")
+metric = load_metric("f1")
 
 def compute_metrics(eval_pred):
     logits, labels = eval_pred
