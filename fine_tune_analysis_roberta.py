@@ -122,7 +122,7 @@ def main():
         scores = trainer.evaluate()
         
         print("\n\n New SCORES!!!!!!")
-        print(scores['eval_accuracy'])
+        print(scores)
         print("\n")
 
         torch.save(model.state_dict(), 'trained_models/model_after.pth')
