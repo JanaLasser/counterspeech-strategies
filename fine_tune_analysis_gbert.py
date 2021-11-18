@@ -18,7 +18,9 @@ from sklearn.model_selection import cross_val_score
 """""
 #data_label= "dataset1"
 data_label= "datasetDE"
-raw_datasets = load_dataset('json', data_files={"train":data_label+"_train.json","test":data_label+"_test.json"})
+raw_datasets = load_dataset('json',
+        data_files={"train":data_label + "_train.json",
+                    "test":data_label + "_test.json"})
 
 print("\n\nLoaded ", data_label,"!!\n\n\n")
 
@@ -78,15 +80,11 @@ def main():
     """
     training_args = TrainingArguments("test_trainer",
     eval_accumulation_steps=1,
-    per_device_train_batch_size =256,
+    per_device_train_batch_size=256,
     per_device_eval_batch_size=256,
     num_train_epochs=5,
     )# %%
     
-    #%%
-    """
-    Randomly select small subset to play with
-    """
     for i in tqdm(range(1)):
 
         if i == 0:
@@ -103,8 +101,6 @@ def main():
         
         print("\n Random Training split",Counter(rand_train_dataset["label"]))
         print("\n Random Eval split",Counter(rand_eval_dataset["label"]))
-
-        #print(rand_train_dataset)
     
         """
         Trainer is the function that actually does the fine tunning.
@@ -132,14 +128,8 @@ def main():
         print(scores['eval_accuracy'])
         print("\n")
 
-        #small_train_dataset = tokenized_datasets["train"].shuffle(seed=2).#select(range(500))
-        #small_eval_dataset = tokenized_datasets["test"].shuffle(seed=2).#select(range(500))
-
-        #%%
         torch.save(model.state_dict(), './model_after.pth')
-        
-        #print(rand_train_dataset)
-        #%%
+
 
 '''
         input_ids = torch.tensor(np.array(rand_train_dataset["input_ids"]))
