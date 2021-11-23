@@ -35,6 +35,11 @@ try:
     mode = sys.argv[1]
 except IndexError:
     print("no mode supplied!")
+    
+try:
+    batch_size = int(sys.argv[2])
+except IndexError:
+    print("no batch size supplied!")
 
 
 # In[3]:
@@ -194,6 +199,7 @@ def run_training(df, model_name):
         all_lr = []
 
         for epoch in range(EPOCHS):
+            print(f"===== EPOCH: {epoch} =====")   
 
             # Call the train function and get the training loss
             train_losses, lr_list = train_fn(train_data_loader, model, optimizer, device, scheduler)
@@ -217,17 +223,19 @@ def run_training(df, model_name):
     print(f"Average CV: {round(np.mean(cv), 4)}\n") 
 
 
-# In[ ]:
+# In[26]:
 
 
 FOLDS = [0, 1, 2, 3, 4]
-TRAIN_BS = 10
-VAL_BS = 10
 EPOCHS = 5
 data_frac = 1
 model_name = "models/twitter-xlm-roberta-base"
 
+#batch_size = 10
 #mode = "test"
+TRAIN_BS = batch_size
+VAL_BS = batch_size
+
 if mode == "test":
     FOLDS = FOLDS[0:1]
     EPOCHS = 1
