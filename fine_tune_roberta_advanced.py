@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[7]:
+# In[15]:
 
 
 import numpy as np
@@ -17,6 +17,7 @@ import matplotlib.pyplot as plt
 import transformers
 import os
 import sys
+from tqdm import tqdm
 
 os.environ["TOKENIZERS_PARALLELISM"] = "true"
 
@@ -72,7 +73,7 @@ class RIDataset(torch.utils.data.Dataset):
                }
 
 
-# In[8]:
+# In[20]:
 
 
 def loss_fn(predictions, labels):
@@ -86,7 +87,7 @@ def train_fn(data_loader, model, optimizer, device, scheduler):
     lr_list = []
     train_losses = []         
     
-    for batch in data_loader:                    # Loop over all batches.
+    for batch in tqdm(data_loader, total=len(data_loader)):                    # Loop over all batches.
         
         ids = batch["ids"].to(device, dtype=torch.long)
         masks = batch["masks"].to(device, dtype=torch.long)
@@ -115,7 +116,7 @@ def validate_fn(data_loader, model, device):
         
     with torch.no_grad():                           # Disable gradient calculation.
         
-        for batch in data_loader:                   # Loop over all batches.
+        for batch in tqdm(data_loader, total=len(data_loader)):                   # Loop over all batches.
             
             ids = batch["ids"].to(device, dtype=torch.long)
             masks = batch["masks"].to(device, dtype=torch.long)
@@ -138,7 +139,7 @@ def plot_train_val_losses(all_train_losses, all_val_losses, fold):
     plt.savefig('losses_fold_{}.pdf'.format(fold))
 
 
-# In[11]:
+# In[21]:
 
 
 def run_training(df, model_name):
@@ -220,21 +221,21 @@ def run_training(df, model_name):
     print(f"Average CV: {round(np.mean(cv), 4)}\n") 
 
 
-# In[13]:
+# In[22]:
 
 
 FOLDS = [0, 1, 2, 3, 4]
 TRAIN_BS = 10
-VAL_BS = 100
+VAL_BS = 10
 EPOCHS = 5
 data_frac = 1
 model_name = "models/twitter-xlm-roberta-base"
 
-#testing=True
+testing=True
 if testing:
     FOLDS = FOLDS[0:1]
     EPOCHS = 1
-    data_frac = 0.0004
+    data_frac = 0.0001
     
 src = '../../data/traindata'
 df = pd.read_csv(join(src, 'dataset_DE_train.csv'))
