@@ -27,18 +27,14 @@ os.environ["TOKENIZERS_PARALLELISM"] = "true"
 # * https://towardsdatascience.com/advanced-techniques-for-fine-tuning-transformers-82e4e61e16e
 # * https://towardsdatascience.com/cross-entropy-for-classification-d98e7f974451
 
-# In[2]:
+# In[25]:
 
 
-testing = False
+mode = "test"
 try:
-    arg = sys.argv[1]
-    if arg == "test":
-        testing = True
-    else:
-        print("couldn't recognize argument {}".format(arg))
+    mode = sys.argv[1]
 except IndexError:
-    print('running in normal mode')
+    print("no mode supplied!")
 
 
 # In[3]:
@@ -221,7 +217,7 @@ def run_training(df, model_name):
     print(f"Average CV: {round(np.mean(cv), 4)}\n") 
 
 
-# In[22]:
+# In[ ]:
 
 
 FOLDS = [0, 1, 2, 3, 4]
@@ -231,11 +227,13 @@ EPOCHS = 5
 data_frac = 1
 model_name = "models/twitter-xlm-roberta-base"
 
-testing=True
-if testing:
+#mode = "test"
+if mode == "test":
     FOLDS = FOLDS[0:1]
     EPOCHS = 1
     data_frac = 0.0001
+if mode == "prototype":
+    data_frac = 0.01
     
 src = '../../data/traindata'
 df = pd.read_csv(join(src, 'dataset_DE_train.csv'))
