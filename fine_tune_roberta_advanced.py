@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[3]:
+# In[7]:
 
 
 import numpy as np
@@ -13,6 +13,7 @@ import torch
 from os.path import join
 from transformers import XLMRobertaTokenizerFast
 from transformers import XLMRobertaForSequenceClassification
+import matplotlib.pyplot as plt
 import transformers
 import os
 import sys
@@ -20,7 +21,12 @@ import sys
 os.environ["TOKENIZERS_PARALLELISM"] = "true"
 
 
-# In[4]:
+# See
+# * https://towardsdatascience.com/transformers-can-you-rate-the-complexity-of-reading-passages-17c76da3403
+# * https://towardsdatascience.com/advanced-techniques-for-fine-tuning-transformers-82e4e61e16e
+# * https://towardsdatascience.com/cross-entropy-for-classification-d98e7f974451
+
+# In[2]:
 
 
 testing = False
@@ -34,7 +40,7 @@ except IndexError:
     print('running in normal mode')
 
 
-# In[5]:
+# In[3]:
 
 
 class RIDataset(torch.utils.data.Dataset):
@@ -66,10 +72,10 @@ class RIDataset(torch.utils.data.Dataset):
                }
 
 
-# In[6]:
+# In[8]:
 
 
-def loss_fn(predictions, labels):       
+def loss_fn(predictions, labels):
     return torch.nn.CrossEntropyLoss()(predictions, labels)
 
 
@@ -113,7 +119,7 @@ def validate_fn(data_loader, model, device):
             
             ids = batch["ids"].to(device, dtype=torch.long)
             masks = batch["masks"].to(device, dtype=torch.long)
-            labels = batch["label"].to(device, dtype=torch.float)
+            labels = batch["label"].to(device, dtype=torch.long)
 
             outputs = model(ids, masks).logits      # Predictions from 1 batch of data.
             
@@ -132,7 +138,7 @@ def plot_train_val_losses(all_train_losses, all_val_losses, fold):
     plt.savefig('losses_fold_{}.pdf'.format(fold))
 
 
-# In[7]:
+# In[11]:
 
 
 def run_training(df, model_name):
@@ -214,12 +220,12 @@ def run_training(df, model_name):
     print(f"Average CV: {round(np.mean(cv), 4)}\n") 
 
 
-# In[10]:
+# In[13]:
 
 
 FOLDS = [0, 1, 2, 3, 4]
-TRAIN_BS = 128
-VAL_BS = 128
+TRAIN_BS = 10
+VAL_BS = 100
 EPOCHS = 5
 data_frac = 1
 model_name = "models/twitter-xlm-roberta-base"
@@ -228,10 +234,10 @@ model_name = "models/twitter-xlm-roberta-base"
 if testing:
     FOLDS = FOLDS[0:1]
     EPOCHS = 1
-    data_frac = 0.01
+    data_frac = 0.0004
     
 src = '../../data/traindata'
-df = pd.read_csv(join(src, 'dataset_DE_sample_train.csv'))
+df = pd.read_csv(join(src, 'dataset_DE_train.csv'))
 df['label'] = df['label'].replace({'hate':1, 'counter':0})
 df = df.drop(columns=['id'])
 df = df.sample(frac=data_frac, random_state=42).reset_index(drop=True)
