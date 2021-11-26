@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[15]:
+# In[43]:
 
 
 import numpy as np
 import pandas as pd
-from datasets import load_dataset
+from datasets import load_dataset, load_metric
 from torch.utils.data import DataLoader
 from multiprocess import Pool
 import torch
@@ -75,7 +75,7 @@ class RIDataset(torch.utils.data.Dataset):
                }
 
 
-# In[37]:
+# In[52]:
 
 
 def loss_fn(predictions, labels):
@@ -110,11 +110,21 @@ def train_fn(data_loader, model, optimizer, device, scheduler):
     return train_losses, lr_list
 
 
+
+
+def compute_metrics(logits, labels):
+    predictions = np.argmax(logits, axis=-1)
+    performance = metric.compute(predictions=predictions, references=labels)
+    print(performance)
+    return performance[METRIC]
+
+
 def validate_fn(data_loader, model, device):
         
     model.eval()                                    # Put model in evaluation mode.
     
     val_losses = []
+    performance_metric = []
         
     with torch.no_grad():                           # Disable gradient calculation.
         
@@ -129,7 +139,10 @@ def validate_fn(data_loader, model, device):
             loss = loss_fn(outputs, labels)        # Get the validation loss.
             val_losses.append(loss.item())
             
-    return val_losses 
+            performance = compute_metrics(outputs, labels)
+            performance_metric.append(performance)
+            
+    return val_losses, performance_metric
 
 
 def plot_train_val_losses(all_train_losses, all_val_losses, fold=None):
@@ -145,7 +158,7 @@ def plot_train_val_losses(all_train_losses, all_val_losses, fold=None):
         plt.savefig('losses.pdf')
 
 
-# In[21]:
+# In[ ]:
 
 
 def run_training_crossval(df, model_name):
@@ -202,6 +215,7 @@ def run_training_crossval(df, model_name):
         all_train_losses = []
         all_val_losses = []
         all_lr = []
+        all_performances = []
 
         for epoch in range(EPOCHS):
             print(f"\t===== EPOCH: {epoch} =====")   
@@ -213,13 +227,20 @@ def run_training_crossval(df, model_name):
             all_lr.extend(lr_list)
 
             # Perform validation and get the validation loss
-            val_losses = validate_fn(val_data_loader, model, device)
+            val_losses, performance_metric =                 validate_fn(val_data_loader, model, device)
             val_loss = np.mean(val_losses)
+            performance = np.mean(performance_metric)
             all_val_losses.append(val_loss) 
+            all_performances.append(performance)
+            print('{}: {}'.format(METRIC, performance))
 
 
         # Plot the losses and learning rate schedule.
         plot_train_val_losses(all_train_losses, all_val_losses, fold)
+        torch.save(model.state_dict(),
+                       'trained_models/twitter-xlm-roberta-base_nt-{}_nv-{}_e-{}_f-{}_bs-{}_lr-{}.pth'\
+                       .format(len(train_dataset), len(val_dataset), len(EPOCHS),
+                               len(FOLDS), TRAIN_BS, LEARNING_RATE))
 
                 
     # Print the cross validation scores and their average.
@@ -228,7 +249,7 @@ def run_training_crossval(df, model_name):
     print(f"Average CV: {round(np.mean(cv), 4)}\n") 
 
 
-# In[39]:
+# In[60]:
 
 
 def run_training(df, model_name):
@@ -263,7 +284,7 @@ def run_training(df, model_name):
     model = XLMRobertaForSequenceClassification            .from_pretrained(model_name, num_labels=2)
     model.to(device)
 
-    optimizer = transformers.AdamW(model.parameters(), lr=1e-6)
+    optimizer = transformers.AdamW(model.parameters(), lr=LEARNING_RATE)
 
     train_steps = int(len(df_train) / TRAIN_BS * EPOCHS) 
 
@@ -277,6 +298,7 @@ def run_training(df, model_name):
     all_train_losses = []
     all_val_losses = []
     all_lr = []
+    all_performances = []
 
     for epoch in range(EPOCHS):
         print(f"\t===== EPOCH: {epoch} =====")   
@@ -288,25 +310,36 @@ def run_training(df, model_name):
         all_lr.extend(lr_list)
 
         # Perform validation and get the validation loss
-        val_losses = validate_fn(val_data_loader, model, device)
+        val_losses, performance_metric =             validate_fn(val_data_loader, model, device)
         val_loss = np.mean(val_losses)
+        performance = np.mean(performance_metric)
         all_val_losses.append(val_loss) 
+        all_performances.append(performance)
+        
+        print('{}: {}'.format(METRIC, performance))
 
 
     # Plot the losses and learning rate schedule.
     plot_train_val_losses(all_train_losses, all_val_losses)
+    torch.save(model.state_dict(),
+               'trained_models/twitter-xlm-roberta-base_nt-{}_nv-{}_e-{}_f-{}_bs-{}_lr-{}.pth'\
+               .format(len(train_dataset), len(val_dataset), EPOCHS,
+                       len(FOLDS), TRAIN_BS, LEARNING_RATE))
 
 
-# In[42]:
+# In[59]:
 
 
 FOLDS = [0, 1, 2, 3, 4]
 EPOCHS = 5
+LEARNING_RATE = 1e-6
 data_frac = 1
 model_name = "models/twitter-xlm-roberta-base"
+METRIC = "f1"
+metric = load_metric(METRIC)
 
-#mode = "test"
-#batch_size = 10
+mode = "test"
+batch_size = 10
 TRAIN_BS = batch_size
 VAL_BS = batch_size
 
@@ -329,6 +362,7 @@ if mode == "test":
     run_training(df, model_name)
     
 if mode == "prototype":
+    FOLDS = FOLDS[0:1]
     data_frac = 0.01
     df = df.sample(frac=data_frac, random_state=42).reset_index(drop=True)
     print('N rows: {}'.format(len(df)))
@@ -350,10 +384,10 @@ if mode == "train":
     run_training_crossval(df, model_name)
 
 
-# In[35]:
+# In[58]:
 
 
-N_val
+EPOCHS
 
 
 # In[ ]:
