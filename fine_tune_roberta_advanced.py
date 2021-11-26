@@ -75,7 +75,7 @@ class RIDataset(torch.utils.data.Dataset):
                }
 
 
-# In[52]:
+# In[64]:
 
 
 def loss_fn(predictions, labels):
@@ -139,7 +139,7 @@ def validate_fn(data_loader, model, device):
             loss = loss_fn(outputs, labels)        # Get the validation loss.
             val_losses.append(loss.item())
             
-            performance = compute_metrics(outputs, labels)
+            performance = compute_metrics(outputs.cpu(), labels)
             performance_metric.append(performance)
             
     return val_losses, performance_metric
@@ -237,8 +237,8 @@ def run_training_crossval(df, model_name):
 
         # Plot the losses and learning rate schedule.
         plot_train_val_losses(all_train_losses, all_val_losses, fold)
-        #model.to("cpu")
-        model.save_pretrained(
+        model.to("cpu")
+        torch.save(model.state_dict(),
                        'trained_models/twitter-xlm-roberta-base_nt-{}_nv-{}_e-{}_f-{}_bs-{}_lr-{}.pth'\
                        .format(len(train_dataset), len(val_dataset), EPOCHS,
                                len(FOLDS), TRAIN_BS, LEARNING_RATE))
@@ -322,8 +322,8 @@ def run_training(df, model_name):
 
     # Plot the losses and learning rate schedule.
     plot_train_val_losses(all_train_losses, all_val_losses)
-    #model.to("cpu")
-    model.save_pretrained(
+    model.to("cpu")
+    torch.save(model.state_dict(),
                'trained_models/twitter-xlm-roberta-base_nt-{}_nv-{}_e-{}_f-{}_bs-{}_lr-{}.pth'\
                .format(len(train_dataset), len(val_dataset), EPOCHS,
                        len(FOLDS), TRAIN_BS, LEARNING_RATE))
