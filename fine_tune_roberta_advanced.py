@@ -305,8 +305,8 @@ EPOCHS = 5
 data_frac = 1
 model_name = "models/twitter-xlm-roberta-base"
 
-mode = "test"
-batch_size = 10
+#mode = "test"
+#batch_size = 10
 TRAIN_BS = batch_size
 VAL_BS = batch_size
 
