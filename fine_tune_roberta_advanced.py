@@ -158,7 +158,7 @@ def plot_train_val_losses(all_train_losses, all_val_losses, fold=None):
         plt.savefig('losses.pdf')
 
 
-# In[ ]:
+# In[61]:
 
 
 def run_training_crossval(df, model_name):
@@ -237,9 +237,10 @@ def run_training_crossval(df, model_name):
 
         # Plot the losses and learning rate schedule.
         plot_train_val_losses(all_train_losses, all_val_losses, fold)
+        model.to("cpu")
         torch.save(model.state_dict(),
                        'trained_models/twitter-xlm-roberta-base_nt-{}_nv-{}_e-{}_f-{}_bs-{}_lr-{}.pth'\
-                       .format(len(train_dataset), len(val_dataset), len(EPOCHS),
+                       .format(len(train_dataset), len(val_dataset), EPOCHS,
                                len(FOLDS), TRAIN_BS, LEARNING_RATE))
 
                 
@@ -249,7 +250,7 @@ def run_training_crossval(df, model_name):
     print(f"Average CV: {round(np.mean(cv), 4)}\n") 
 
 
-# In[60]:
+# In[62]:
 
 
 def run_training(df, model_name):
@@ -321,13 +322,14 @@ def run_training(df, model_name):
 
     # Plot the losses and learning rate schedule.
     plot_train_val_losses(all_train_losses, all_val_losses)
+    model.to("cpu")
     torch.save(model.state_dict(),
                'trained_models/twitter-xlm-roberta-base_nt-{}_nv-{}_e-{}_f-{}_bs-{}_lr-{}.pth'\
                .format(len(train_dataset), len(val_dataset), EPOCHS,
                        len(FOLDS), TRAIN_BS, LEARNING_RATE))
 
 
-# In[59]:
+# In[63]:
 
 
 FOLDS = [0, 1, 2, 3, 4]
@@ -382,16 +384,4 @@ if mode == "train":
     print('N rows: {}'.format(len(df)))
     
     run_training_crossval(df, model_name)
-
-
-# In[58]:
-
-
-EPOCHS
-
-
-# In[ ]:
-
-
-
 
