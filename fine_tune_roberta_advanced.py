@@ -35,7 +35,8 @@ try:
     mode = sys.argv[1]
 except IndexError:
     print("no mode supplied!")
-    
+
+batch_size = 512
 try:
     batch_size = int(sys.argv[2])
 except IndexError:
@@ -74,7 +75,7 @@ class RIDataset(torch.utils.data.Dataset):
                }
 
 
-# In[20]:
+# In[37]:
 
 
 def loss_fn(predictions, labels):
@@ -131,19 +132,23 @@ def validate_fn(data_loader, model, device):
     return val_losses 
 
 
-def plot_train_val_losses(all_train_losses, all_val_losses, fold):
+def plot_train_val_losses(all_train_losses, all_val_losses, fold=None):
     epochs = range(1, len(all_train_losses) + 1)
     fig, ax = plt.subplots()
     ax.plot(epochs, all_train_losses, label='training loss')
     ax.plot(epochs, all_val_losses, label='validation loss')
-    ax.set_title('Fold: {}, {}'.format(fold, model_name))
-    plt.savefig('losses_fold_{}.pdf'.format(fold))
+    ax.legend()
+    if fold != None:
+        ax.set_title('Fold: {}, {}'.format(fold, model_name))
+        plt.savefig('losses_fold_{}.pdf'.format(fold))
+    else:
+        plt.savefig('losses.pdf')
 
 
 # In[21]:
 
 
-def run_training(df, model_name):
+def run_training_crossval(df, model_name):
     
     cv = []
 
@@ -199,7 +204,7 @@ def run_training(df, model_name):
         all_lr = []
 
         for epoch in range(EPOCHS):
-            print(f"===== EPOCH: {epoch} =====")   
+            print(f"\t===== EPOCH: {epoch} =====")   
 
             # Call the train function and get the training loss
             train_losses, lr_list = train_fn(train_data_loader, model, optimizer, device, scheduler)
@@ -223,7 +228,76 @@ def run_training(df, model_name):
     print(f"Average CV: {round(np.mean(cv), 4)}\n") 
 
 
-# In[26]:
+# In[30]:
+
+
+def run_training(df, model_name):
+
+    tokenizer =  XLMRobertaTokenizerFast.from_pretrained(model_name)
+
+    # Fetch training data
+    df_train = df[df["train"] == 1].reset_index(drop=True)
+
+    # Fetch validation data
+    df_val = df[df["train"] == 0].reset_index(drop=True)
+
+    # Initialize training dataset
+    train_dataset = RIDataset(texts = df_train["text"].values,
+                              labels = df_train["label"].values,
+                              tokenizer = tokenizer)
+
+    # Initialize validation dataset
+    val_dataset = RIDataset(texts = df_val["text"].values,
+                            labels = df_val["label"].values,
+                            tokenizer = tokenizer)
+
+    # Create training dataloader
+    train_data_loader = DataLoader(train_dataset, batch_size = TRAIN_BS,
+                                   shuffle = True, num_workers = 2)
+
+    # Create validation dataloader
+    val_data_loader = DataLoader(val_dataset, batch_size = VAL_BS,
+                                 shuffle = False, num_workers = 2)
+
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    model = XLMRobertaForSequenceClassification            .from_pretrained(model_name, num_labels=2)
+    model.to(device)
+
+    optimizer = transformers.AdamW(model.parameters(), lr=1e-6)
+
+    train_steps = int(len(df_train) / TRAIN_BS * EPOCHS) 
+
+    scheduler = transformers.get_scheduler(
+        "linear",    # Create a schedule with a learning rate that decreases linearly 
+                     # from the initial learning rate set in the optimizer to 0.
+        optimizer = optimizer,
+        num_warmup_steps = 0,
+        num_training_steps = train_steps)
+   
+    all_train_losses = []
+    all_val_losses = []
+    all_lr = []
+
+    for epoch in range(EPOCHS):
+        print(f"\t===== EPOCH: {epoch} =====")   
+
+        # Call the train function and get the training loss
+        train_losses, lr_list = train_fn(train_data_loader, model, optimizer, device, scheduler)
+        train_loss = np.mean(train_losses)   
+        all_train_losses.append(train_loss)
+        all_lr.extend(lr_list)
+
+        # Perform validation and get the validation loss
+        val_losses = validate_fn(val_data_loader, model, device)
+        val_loss = np.mean(val_losses)
+        all_val_losses.append(val_loss) 
+
+
+    # Plot the losses and learning rate schedule.
+    plot_train_val_losses(all_train_losses, all_val_losses, fold)
+
+
+# In[34]:
 
 
 FOLDS = [0, 1, 2, 3, 4]
@@ -231,32 +305,55 @@ EPOCHS = 5
 data_frac = 1
 model_name = "models/twitter-xlm-roberta-base"
 
-#batch_size = 10
 #mode = "test"
+#batch_size = 10
 TRAIN_BS = batch_size
 VAL_BS = batch_size
+
+src = '../../data/traindata'
+df = pd.read_csv(join(src, 'dataset_DE_train.csv'))
+df['label'] = df['label'].replace({'hate':1, 'counter':0})
+df = df.drop(columns=['id'])
 
 if mode == "test":
     FOLDS = FOLDS[0:1]
     EPOCHS = 1
     data_frac = 0.0001
+    df = df.sample(frac=data_frac, random_state=42).reset_index(drop=True)
+    print('N rows: {}'.format(len(df)))
+    
+    N_val = int(len(df)/5)
+    df["train"] = 1
+    df.iloc[slice(0,N_val), "train"] = 0
+    
+    run_training(df, model_name)
+    
 if mode == "prototype":
     data_frac = 0.01
+    df = df.sample(frac=data_frac, random_state=42).reset_index(drop=True)
+    print('N rows: {}'.format(len(df)))
+    N_val = int(len(df)/5)
+    df["train"] = 1
+    df.iloc[0:N_val, "train"] = 0
     
-src = '../../data/traindata'
-df = pd.read_csv(join(src, 'dataset_DE_train.csv'))
-df['label'] = df['label'].replace({'hate':1, 'counter':0})
-df = df.drop(columns=['id'])
-df = df.sample(frac=data_frac, random_state=42).reset_index(drop=True)
-k = 5
-N = len(df)
-fold_size = int(N / k)
-for fold in range(k):
-    df.loc[fold_size * fold:fold_size * (fold + 1), "fold"] = fold
-df["fold"] = df["fold"].astype(int)
-print('N rows: {}'.format(len(df)))
+    run_training(df, model_name)
+    
+if mode == "train":
+    k = len(FOLDS)
+    N = len(df)
+    fold_size = int(N / k)
+    for fold in range(k):
+        df.loc[fold_size * fold:fold_size * (fold + 1), "fold"] = fold
+    df["fold"] = df["fold"].astype(int)
+    print('N rows: {}'.format(len(df)))
+    
+    run_training_crossval(df, model_name)
 
-run_training(df, model_name)
+
+# In[35]:
+
+
+N_val
 
 
 # In[ ]:
