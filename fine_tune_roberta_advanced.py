@@ -340,8 +340,8 @@ model_name = "models/twitter-xlm-roberta-base"
 METRIC = "f1"
 metric = load_metric(METRIC)
 
-mode = "test"
-batch_size = 10
+#mode = "test"
+#batch_size = 10
 TRAIN_BS = batch_size
 VAL_BS = batch_size
 
