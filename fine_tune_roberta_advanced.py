@@ -228,7 +228,7 @@ def run_training_crossval(df, model_name):
     print(f"Average CV: {round(np.mean(cv), 4)}\n") 
 
 
-# In[30]:
+# In[39]:
 
 
 def run_training(df, model_name):
@@ -294,10 +294,10 @@ def run_training(df, model_name):
 
 
     # Plot the losses and learning rate schedule.
-    plot_train_val_losses(all_train_losses, all_val_losses, fold)
+    plot_train_val_losses(all_train_losses, all_val_losses)
 
 
-# In[34]:
+# In[42]:
 
 
 FOLDS = [0, 1, 2, 3, 4]
@@ -305,8 +305,8 @@ EPOCHS = 5
 data_frac = 1
 model_name = "models/twitter-xlm-roberta-base"
 
-#mode = "test"
-#batch_size = 10
+mode = "test"
+batch_size = 10
 TRAIN_BS = batch_size
 VAL_BS = batch_size
 
@@ -324,7 +324,7 @@ if mode == "test":
     
     N_val = int(len(df)/5)
     df["train"] = 1
-    df.iloc[slice(0,N_val), "train"] = 0
+    df.loc[0:N_val, ("train")] = 0
     
     run_training(df, model_name)
     
@@ -334,7 +334,7 @@ if mode == "prototype":
     print('N rows: {}'.format(len(df)))
     N_val = int(len(df)/5)
     df["train"] = 1
-    df.iloc[0:N_val, "train"] = 0
+    df.loc[0:N_val, ("train")] = 0
     
     run_training(df, model_name)
     
