@@ -1,7 +1,7 @@
 # counterspeech-strategies
 
 ## ToDos
-- [ ] implement training workflow following [this](https://towardsdatascience.com/transformers-can-you-rate-the-complexity-of-reading-passages-17c76da3403) example
+- [x] implement training workflow following [this](https://towardsdatascience.com/transformers-can-you-rate-the-complexity-of-reading-passages-17c76da3403) example
 - [ ] test new training workflow implementation
 - [ ] implement layer-wise learning rate decay
 - [ ] implement warm-up steps
