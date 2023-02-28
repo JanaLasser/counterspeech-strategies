@@ -1,0 +1,133 @@
+import pandas as pd
+from os.path import join
+import sys
+from torch.utils.data import DataLoader, Dataset
+from transformers import AutoModelForSequenceClassification, AutoTokenizer
+from transformers import TrainingArguments
+from transformers import Trainer
+from scipy.special import softmax
+from os.path import join
+from torch import cuda
+import torch as th
+import numpy as np
+
+MODEL_PATH = sys.argv[1]
+MODEL_NAME = MODEL_PATH.split("/")[-1].split("_data")[0].replace("model-", "")
+MODEL_TYPE = MODEL_NAME.split("_")[0]
+MODEL_DATA_NAME = MODEL_PATH.split("data-")[1].split("_split")[0]
+DATASET_PATH = sys.argv[2]
+DATASET_NAME = DATASET_PATH.split("/")[-1].split(".")[0]
+LABEL_CONDENSATION = sys.argv[3]
+TOKENIZER_PATH = f"../models/{MODEL_TYPE}"
+
+if LABEL_CONDENSATION == "none":
+    goal_dict = {
+        0:"strength",
+        1:"just",
+        2:"threat",
+        3:"weak",
+        4:"emph-ground",
+        5:"emph-prob",
+        6:"neutral",
+        7:"unint"
+        }
+elif LABEL_CONDENSATION == "medium":
+    goal_dict = {
+        0:"pose",
+        1:"threat",
+        2:"weak",
+        3:"emph",
+        4:"neutral",
+        5:"unint"
+    }
+elif LABEL_CONDENSATION == "full":
+     goal_dict = {
+        0:"weak",
+        1:"neutral",
+        2:"other",
+    }   
+elif LABEL_CONDENSATION == "full2":
+    goal_dict = {
+        0:"in_both_positive",
+        1:"out_negative",
+        2:"neutral_unint",
+    }
+else:
+    print(f"unknown label condensation")
+    sys.exit()
+
+class InferenceDataset(Dataset):
+    def __init__(self, data, tokenizer, max_token_len):
+        self.data = data
+        self.tokenizer = tokenizer
+        self.max_token_len = max_token_len
+
+    def __len__(self):
+        return len(self.data)
+
+    def __getitem__(self, index):
+        data_row = self.data.iloc[index]
+        text = data_row.text
+        encoding = self.tokenizer.encode_plus(
+            text=text,
+            add_special_tokens=True,
+            max_length=self.max_token_len,
+            return_token_type_ids=True,
+            padding="max_length",
+            truncation=True,
+            return_attention_mask=True)
+
+        return dict(
+            input_ids=th.tensor(encoding["input_ids"], dtype=th.long),
+            attention_mask=th.tensor(encoding["attention_mask"], dtype=th.long),
+            token_type_ids=th.tensor(encoding["token_type_ids"], dtype=th.long)
+        )
+
+BATCH_SIZE = 8192
+
+if DATASET_PATH.endswith(".gzip"):
+    cols = ["tweet_id", "text"]
+    df = pd.read_csv(DATASET_PATH, usecols=cols, compression="gzip")
+else:
+    cols = ["tweet_id", "text", "label"]
+    df = pd.read_csv(DATASET_PATH, usecols=cols, delimiter=";")
+    
+training_args = TrainingArguments(
+    "test-trainer",
+    per_device_train_batch_size = 16,
+    per_device_eval_batch_size = 16,
+    num_train_epochs = 5,
+    learning_rate = 2e-5,
+    weight_decay = 0.01,
+    evaluation_strategy = "epoch"
+)
+
+model = AutoModelForSequenceClassification.from_pretrained(MODEL_PATH)
+tokenizer = AutoTokenizer.from_pretrained(TOKENIZER_PATH, use_fast=True)
+
+inference_set = InferenceDataset(df, tokenizer, max_token_len=100)
+inference_params = {'batch_size': BATCH_SIZE, 'shuffle': False}
+inference_loader = DataLoader(inference_set, **inference_params)
+
+trainer = Trainer(
+        model,
+        training_args,
+        tokenizer = tokenizer,
+)
+
+raw_pred, _, _ = trainer.prediction_loop(
+    inference_loader, 
+    description="prediction"
+)
+norm_pred = softmax(raw_pred, axis=1)
+goals = np.argmax(norm_pred, axis=1)
+
+df[f'goal'] = goals
+for label in goal_dict.keys():
+    df[goal_dict[label]] = norm_pred[0:, label]
+
+condensation_dict = {"full":"_condensed", "full2":"_condensed2", 
+                     "medium":"_halfcondensed", "none":""}
+fname = "inferred_goal{}_{}.csv"\
+    .format(condensation_dict[LABEL_CONDENSATION], DATASET_NAME)
+df.to_csv(fname, index=False, sep=";")
