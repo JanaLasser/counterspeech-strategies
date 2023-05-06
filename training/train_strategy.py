@@ -32,9 +32,9 @@ except IndexError:
 
 LR = 2e-5
  
-DATA_SRC = "../data_preparation"
+DATA_SRC = "../data/traindata/"
 DATA_NAME = f"{DATA_BATCH}"
-TOKENIZER = f"../roberta/models/{MODEL_TYPE}"
+TOKENIZER = f"../models/{MODEL_TYPE}"
 
 MAX_TRAINING_EXAMPLES = -1
 MAX_TEST_EXAMPLES = -1
@@ -145,6 +145,6 @@ for split in splits[0:DATA_SPLITS]:
     df = pd.DataFrame(report).transpose()   
     
     fname = f"report_model-{MODEL_NAME}_data-{DATA_NAME}_epochs-{EPOCHS}_bs-{BATCH_SIZE}_split-{split}.csv"
-    df.to_csv(join("reports", fname), index=False)
+    df.to_csv(join("../data/inference/reports_strategy/", fname), index=False)
     
     
