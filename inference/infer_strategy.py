@@ -61,7 +61,7 @@ else:
     sys.exit()
 
 print(MODEL_NAME)
-print(DATA_NAME)
+print(DATASET_NAME)
 
 test = False
 
