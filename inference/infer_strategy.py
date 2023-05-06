@@ -22,7 +22,6 @@ DATASET_NAME = DATASET_PATH.split("/")[-1].split(".")[0]
 NUM_LABELS = int(sys.argv[3])
 TOKENIZER_PATH = f"../models/{MODEL_TYPE}"
 
-NUM_LABELS = int(sys.argv[2])
 if NUM_LABELS == 5:
     strategy_dict = {
         0:"construct",
