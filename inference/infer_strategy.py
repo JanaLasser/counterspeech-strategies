@@ -21,6 +21,7 @@ DATASET_PATH = sys.argv[2]
 DATASET_NAME = DATASET_PATH.split("/")[-1].split(".")[0]
 NUM_LABELS = int(sys.argv[3])
 TOKENIZER_PATH = f"../models/{MODEL_TYPE}"
+DST = "../data/inference/"
 
 if NUM_LABELS == 5:
     strategy_dict = {
@@ -67,7 +68,6 @@ test = False
 
 model = AutoModelForSequenceClassification.from_pretrained(MODEL_PATH)
 tokenizer = AutoTokenizer.from_pretrained(TOKENIZER_PATH, use_fast=True)
-
 
 class InferenceDataset(Dataset):
 
@@ -143,4 +143,4 @@ for label in strategy_dict.keys():
 condensation_dict = {5:"_condensed", 7:"_halfcondensed", 13:""}
 fname = "inferred_strategy{}_{}.csv"\
     .format(condensation_dict[NUM_LABELS], DATASET_NAME)
-df.to_csv(fname, index=False, sep=";")
+df.to_csv(join(DST, fname), index=False, sep=";")
