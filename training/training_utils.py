@@ -1,3 +1,7 @@
+import torch
+import numpy as np
+from datasets import load_metric
+
 class MyDataset(torch.utils.data.Dataset):
     def __init__(self, encodings, labels):
         self.encodings = encodings
@@ -12,6 +16,7 @@ class MyDataset(torch.utils.data.Dataset):
         return len(self.labels)
     
 def compute_metrics(eval_preds):
+    metric = load_metric("f1")
     logits, labels = eval_preds
     predictions = np.argmax(logits, axis=-1)
     return metric.compute(predictions=predictions, references=labels, average="micro")
