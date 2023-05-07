@@ -136,7 +136,7 @@ for split in splits[0:DATA_SPLITS]:
 
     trainer.train()
     if SAVE_MODEL:
-        trainer.save_model(f"./best_models/model-{MODEL_NAME}_data-{DATA_NAME}_split-{split}") # save best model
+        trainer.save_model(f"../best_models/model-{MODEL_NAME}_data-{DATA_NAME}_split-{split}") # save best model
 
     test_preds_raw, test_labels , _ = trainer.predict(test_dataset)
     test_preds = np.argmax(test_preds_raw, axis=-1)
