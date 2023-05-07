@@ -11,6 +11,8 @@ from torch import cuda
 from os.path import join
 import sys
 
+from training_utils import MyDataset, compute_metrics
+
 MODEL = sys.argv[1]
 MODEL_NAME = MODEL.split("/")[-1]
 MODEL_TYPE = MODEL_NAME.split("_")[0]
@@ -32,9 +34,9 @@ except IndexError:
 
 LR = 2e-5
  
-DATA_SRC = "data_preparation"
+DATA_SRC = "../data/traindata/"
 DATA_NAME = f"{DATA_BATCH}"
-TOKENIZER = f"../strategy_analysis/roberta/models/{MODEL_TYPE}"
+TOKENIZER = f"../models/{MODEL_TYPE}"
 
 MAX_TRAINING_EXAMPLES = -1
 MAX_TEST_EXAMPLES = -1
@@ -56,25 +58,9 @@ for j in splits:
         )
         dataset_dict[j][i]["text"] = list(data["text"].values)
         dataset_dict[j][i]["labels"] = list(data["label"].values)
-
-class MyDataset(torch.utils.data.Dataset):
-    def __init__(self, encodings, labels):
-        self.encodings = encodings
-        self.labels = labels
-
-    def __getitem__(self, idx):
-        item = {key: torch.tensor(val[idx]) for key, val in self.encodings.items()}
-        item['labels'] = torch.tensor(self.labels[idx])
-        return item
-
-    def __len__(self):
-        return len(self.labels)
     
 metric = load_metric("f1")
-def compute_metrics(eval_preds):
-    logits, labels = eval_preds
-    predictions = np.argmax(logits, axis=-1)
-    return metric.compute(predictions=predictions, references=labels, average="micro")
+metric.compute(predictions=predictions, references=labels, average="micro")
 
 
 for split in splits[0:DATA_SPLITS]:
@@ -123,7 +109,7 @@ for split in splits[0:DATA_SPLITS]:
 
     trainer.train()
     if SAVE_MODEL:
-        trainer.save_model(f"./best_models/model-{MODEL_NAME}_data-{DATA_NAME}_split-{split}")
+        trainer.save_model(f"../best_models/model-{MODEL_NAME}_data-{DATA_NAME}_split-{split}")
 
     test_preds_raw, test_labels , _ = trainer.predict(test_dataset)
     test_preds = np.argmax(test_preds_raw, axis=-1)
@@ -132,6 +118,6 @@ for split in splits[0:DATA_SPLITS]:
     df = pd.DataFrame(report).transpose()
     
     fname = f"report_model-{MODEL_NAME}_data-{DATA_NAME}_epochs-{EPOCHS}_bs-{BATCH_SIZE}_split-{split}.csv"
-    df.to_csv(join("reports", fname), index=False)
+    df.to_csv(join("../data/inference/reports_goal/", fname), index=False)
     
     
