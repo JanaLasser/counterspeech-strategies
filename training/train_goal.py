@@ -58,10 +58,6 @@ for j in splits:
         )
         dataset_dict[j][i]["text"] = list(data["text"].values)
         dataset_dict[j][i]["labels"] = list(data["label"].values)
-    
-metric = load_metric("f1")
-metric.compute(predictions=predictions, references=labels, average="micro")
-
 
 for split in splits[0:DATA_SPLITS]:
             
