@@ -1,0 +1,53 @@
+---
+title: "Reconquista Project - micro-level analysis with thresholded treatments"
+author: "David Garcia"
+output: pdf_document
+---
+
+
+```{r, message=FALSE, cache=T, fig.align='center', fig.width=9}
+library(dplyr)
+
+
+strategies <- c("OPINION", "SARCASM", "CONSTRUCTIVE","INCL", "EXCL")
+emotions <- c("ANGER", "FEAR", "SADNESS", "HOPENTH", "PRIJOY", "DISGUST")
+outcomes <- c("HATE", "TOXICITY", "SPEECHEXT")
+distance <- "mahalanobis"
+
+precision <- c("OPINION"=0.79, "SARCASM"=0.663, "CONSTRUCTIVE"=0.714, "INCL" =0.647, "EXCL" =0.682,
+               "ANGER"= 0.810, "FEAR"=0.646 , "SADNESS"= 0.616, "DISGUST"= 0.609 , "HOPENTH"= 0.757, "PRIJOY"= 0.638)
+negprecision <- c("OPINION"=0.853, "SARCASM"=0.96, "CONSTRUCTIVE"=0.957, "INCL" =0.966, "EXCL" = 0.702,
+               "ANGER"= 0.894, "FEAR"= 0.919, "SADNESS"=  0.9, "DISGUST"=0.967, "HOPENTH"=  0.901, "PRIJOY"= 0.925)
+             
+results <- data.frame()
+set.seed(1985)
+for (strategy in c(strategies,emotions))
+{
+
+  for (outcome in outcomes)
+  {
+    files <- list.files(path="Bootstrapping", pattern = paste0(strategy,"-", outcome, "-",distance,".*"))
+    boots <- NULL
+    for (file in files)
+    {
+      load(paste0("Bootstrapping/",file))
+      boots <- c(boots, btres$t)
+    }
+    boots <- sample(boots, 10000)
+    qs <- quantile(boots, probs = c(0.025, 0.5, 0.975))
+    sig <- sign(qs[2])
+    p <- (sum(sig*boots<0)+1)/length(boots+1)
+    results <- rbind(results, data.frame(strategy, outcome, est=qs[2], low=qs[1], high=qs[3], p, N=length(boots), row.names = NULL)) 
+    
+    hist(boots, main=paste(strategy, "in", outcome))
+    abline(v=0, col="red")
+  }
+}
+
+```
+
+
+```{r, message=FALSE, results='asis'}
+print(knitr::kable(results))
+write.csv(results, row.names=F, file="bootResults.csv")
+```

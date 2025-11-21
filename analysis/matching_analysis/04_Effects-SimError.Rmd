@@ -1,0 +1,62 @@
+---
+title: "Reconquista Project - micro-level analysis with thresholded treatments"
+author: "David Garcia"
+output: pdf_document
+---
+
+
+```{r, message=FALSE, cache=T}
+library(dplyr)
+library(MatchIt)
+library("marginaleffects")
+library(boot)
+
+bootCoef <- function(d, f, precision, negprecision, outcome)
+{
+  
+  m.df <- d[f,]
+  m.df$simtreat <- m.df$treat
+  fliptrues <- runif(n=sum(m.df$treat))>precision
+  flipfalses <- runif(n=sum(!m.df$treat))>negprecision
+
+  m.df$simtreat[m.df$treat & fliptrues] <- FALSE
+  m.df$simtreat[!m.df$treat & flipfalses] <- TRUE
+
+  fit <- lm(m.df[[paste0(outcome, "_2")]] ~ simtreat * (TOXICITY_1 + HATE_1 + SPEECHEXT_1 + OPINION_1 + SARCASM_1 + CONSTRUCTIVE_1 + ANGER_1 + FEAR_1 + SADNESS_1 + HOPENTH_1 + PRIJOY_1 + DISGUST_1 + EXCL_1 + INCL_1 + log(tweetpos_1) + log(treesize_1) + log(userntweets) + log(usernreplies+1) + replies), data = m.df, weights = weights)
+
+  cmp <- avg_comparisons(fit, variables = "simtreat", vcov = ~subclass, newdata = subset(m.df, simtreat), wts = "weights")
+  return(cmp$estimate)
+}
+
+R <- 900
+
+strategies <- c("OPINION", "SARCASM", "CONSTRUCTIVE","INCL", "EXCL")
+emotions <- c("ANGER", "FEAR", "SADNESS", "HOPENTH", "PRIJOY", "DISGUST")
+outcomes <- c("HATE", "TOXICITY", "SPEECHEXT")
+distance <- "mahalanobis"
+
+precision <- c("OPINION"=0.79, "SARCASM"=0.663, "CONSTRUCTIVE"=0.714, "INCL" =0.647, "EXCL" =0.682,
+               "ANGER"= 0.810, "FEAR"=0.646 , "SADNESS"= 0.616, "DISGUST"= 0.609 , "HOPENTH"= 0.757, "PRIJOY"= 0.638)
+negprecision <- c("OPINION"=0.853, "SARCASM"=0.96, "CONSTRUCTIVE"=0.957, "INCL" =0.966, "EXCL" = 0.702,
+               "ANGER"= 0.894, "FEAR"= 0.919, "SADNESS"=  0.9, "DISGUST"=0.967, "HOPENTH"=  0.901, "PRIJOY"= 0.925)
+             
+results <- data.frame()
+
+for (strategy in c(strategies,emotions))
+{
+ load(paste0("MathchedDFs/",strategy,"-",distance,".RData"))
+
+  for (outcome in outcomes)
+  {
+    print(paste(strategy, "in", outcome))
+    btres <- boot(data = m.df, statistic = bootCoef, precision=precision[[strategy]], negprecision=negprecision[[strategy]], outcome=outcome, R=R)
+    save(btres, file=paste0("Bootstrapping/",strategy,"-", outcome, "-",distance,"-", as.numeric(Sys.time()),".Rdata"))
+  }
+}
+
+```
+
+
+```{r, message=FALSE, results='asis'}
+print(knitr::kable(results))
+```

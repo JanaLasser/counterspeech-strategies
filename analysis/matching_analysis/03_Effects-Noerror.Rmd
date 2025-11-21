@@ -1,0 +1,42 @@
+---
+title: "Reconquista Project - micro-level analysis with thresholded treatments"
+author: "David Garcia"
+output: pdf_document
+---
+
+
+```{r, message=FALSE, cache=T}
+library(dplyr)
+library(MatchIt)
+library("marginaleffects")
+
+strategies <- c("OPINION", "SARCASM", "CONSTRUCTIVE","INCL", "EXCL")
+emotions <- c("ANGER", "FEAR", "SADNESS", "HOPENTH", "PRIJOY", "DISGUST")
+outcomes <- c("HATE", "TOXICITY", "SPEECHEXT")
+distance <- "mahalanobis"
+
+results <- data.frame()
+distance <- "mahalanobis"
+
+for (strategy in c(strategies,emotions))
+{
+ load(paste0("MathchedDFs/",strategy,"-",distance,".RData"))
+
+  for (outcome in outcomes)
+  {
+    fit <- lm(m.df[[paste0(outcome, "_2")]] ~ treat * (TOXICITY_1 + HATE_1 + SPEECHEXT_1 + OPINION_1 + SARCASM_1 + CONSTRUCTIVE_1 + ANGER_1 + FEAR_1 + SADNESS_1 + HOPENTH_1 + PRIJOY_1 + DISGUST_1 + EXCL_1 + INCL_1 + log(tweetpos_1) + log(treesize_1) + log(userntweets) + log(usernreplies+1) + replies), data = m.df, weights = weights)
+
+    print(paste(strategy, "in", outcome))
+    cmp <- avg_comparisons(fit, variables = "treat", vcov = ~subclass, newdata = subset(m.df, treat == 1), wts = "weights")
+    print(cmp)
+    results <- rbind(results, data.frame(treat=strategy, outcome, est=cmp$estimate, pval=cmp$p.value, low=cmp$conf.low, high=cmp$conf.high))
+  }
+}
+
+
+```
+
+
+```{r, message=FALSE, results='asis'}
+print(knitr::kable(results))
+```

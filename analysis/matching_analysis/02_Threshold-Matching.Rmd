@@ -1,0 +1,65 @@
+---
+title: "Reconquista Project - matching for micro-level analysis"
+author: "David Garcia"
+output: pdf_document
+---
+
+```{r, message=FALSE, cache=T}
+library(dplyr)
+library(MatchIt)
+
+alltweetsdf <- read.csv("tweetbasics.csv", colClasses=rep("character",3))
+alltweetsdf %>% group_by(userid) %>% summarize(userntweets=n()) -> usertweetsdf
+
+inner_join(alltweetsdf, alltweetsdf, by= c("tweetid"="replytoid")) %>% group_by(userid.x) %>% summarize(usernreplies=n()) -> repliesdf
+
+left_join(usertweetsdf, repliesdf, by=c("userid"="userid.x")) -> udf
+udf$usernreplies[is.na(udf$usernreplies)] <- 0
+
+df <- read.csv("triads.csv", colClasses = c(rep(c(rep("character",4), "integer", "integer", "integer", "character", "character", rep("numeric", 17)), 2),rep("character",4), "integer","integer","integer", "character", rep("numeric", 17)))
+df$replies <- df$replytoid_2==df$tweetid
+
+df <- inner_join(df, udf, by=c("userid_1"="userid"))
+
+thresholds <- c("OPINION"=0.4, "SARCASM"=0.28, "CONSTRUCTIVE"=0.27, "INCL"=0.42, "EXCL" = 0.45,
+                "ANGER"= 0.95,   # ANGER IS THE EXCEPTION! the optimal is 0.24 but this context is waay to angry. This way we have 17K true vs 28K false
+        "FEAR" =  0.59, "SADNESS" =  0.46, "HOPENTH" =  0.51, "PRIJOY" =  0.3, "DISGUST" =  0.48)
+
+df %>% select(OPINION_1, SARCASM_1, CONSTRUCTIVE_1,
+              ANGER_1, FEAR_1, SADNESS_1, HOPENTH_1, PRIJOY_1, DISGUST_1, 
+              HATE_1, TOXICITY_1, PARTEXT_1, SPEECHEXT_1, INCL_1, EXCL_1, 
+              tweetpos_1, treesize_1, userntweets, usernreplies,
+              HATE_2, TOXICITY_2, SPEECHEXT_2,
+              OPINION, SARCASM, CONSTRUCTIVE,
+              ANGER, FEAR, SADNESS, HOPENTH, PRIJOY, DISGUST, 
+              HATE, TOXICITY, PARTEXT, SPEECHEXT, INCL, EXCL, replies) -> sdf
+
+strategies <- c("OPINION", "SARCASM", "CONSTRUCTIVE","INCL", "EXCL")
+emotions <- c("ANGER", "FEAR", "SADNESS", "DISGUST", "HOPENTH", "PRIJOY")
+distance <- "mahalanobis"
+
+results <- data.frame()
+
+for (strategy in c(strategies,emotions))
+{
+  print(paste("Matching for", strategy))
+  
+  sdf$treat <- sdf[[strategy]] > thresholds[[strategy]]
+  
+  unmatch <- matchit(treat ~ TOXICITY_1 + HATE_1 + SPEECHEXT_1 + OPINION_1 + SARCASM_1 + CONSTRUCTIVE_1 + ANGER_1 + FEAR_1 + SADNESS_1 + HOPENTH_1 + PRIJOY_1 + DISGUST_1 + EXCL_1 + INCL_1 + log(tweetpos_1) + log(treesize_1) + log(userntweets) + log(usernreplies+1), data = sdf, method = NULL, distance = distance)
+  
+  match <- matchit(treat ~ TOXICITY_1 + HATE_1 + SPEECHEXT_1 + OPINION_1 + SARCASM_1 + CONSTRUCTIVE_1 + ANGER_1 + FEAR_1 + SADNESS_1 + HOPENTH_1 + PRIJOY_1 + DISGUST_1 + EXCL_1 + INCL_1 + log(tweetpos_1) + log(treesize_1) + log(userntweets) + log(usernreplies+1), data = sdf, method = "nearest", distance = distance)
+  
+  print(summary(unmatch))
+  print(summary(match))
+  print(plot(summary(match), abs = FALSE))
+
+  m.df <- match.data(match)
+  save(m.df, file=paste0("MathchedDFs/",strategy,"-",distance,".RData"))
+  save(match, file=paste0("MathchedDFs/",strategy,"-",distance,"-matching.RData"))
+  
+}
+
+
+```
+
